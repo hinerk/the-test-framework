@@ -1,0 +1,12 @@
+[project]
+name = "the-test-framework"
+description = "a production line test system framework"
+readme = "README.md"
+authors = [
+    {name = "Hinerk Stender", email = "hinerk.stender@mail.de"},
+]
+dependencies = [
+    "log-capture @ git+https://github.com/hinerk/log-capture.git@5b10b16",
+]
+[project.urls]
+Repository = "https://github.com/hinerk/the-test-framework"
