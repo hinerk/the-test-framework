@@ -1,6 +1,9 @@
 from contextlib import ExitStack
 from typing import Annotated
 from dataclasses import dataclass
+
+import pytest
+
 from the_test_framework.core import (
     TestSystem,
     IsSystemSetupData,
@@ -8,10 +11,14 @@ from the_test_framework.core import (
     IsTestSequenceData,
     TestResultInfo,
 )
-from the_test_framework.core.exceptions import QuitTestSystem
+from the_test_framework.core.exceptions import (
+    QuitTestSystem,
+    TestSystemIntrospectionError,
+)
 
 
-def test_requesting_data():
+def pytest_requesting_data():
+    """test requesting data via registered callback signatures"""
     test_system = TestSystem()
 
     @dataclass
@@ -28,7 +35,7 @@ def test_requesting_data():
         return SystemSetupData()
 
     @test_system.test_bed_preparation
-    def t_bed_preparation(
+    def test_bed_preparation(
             system_setup: Annotated[SystemSetupData, IsSystemSetupData],
     ):
         assert isinstance(system_setup, SystemSetupData)
@@ -64,3 +71,11 @@ def test_requesting_data():
         return TestSequenceData()
 
     test_system()
+
+
+def pytest_missing_registered_procedure_callback():
+    """test what happens when test_system.test_sequence is not registered"""
+    test_system = TestSystem()
+
+    with pytest.raises(TestSystemIntrospectionError):
+        test_system()

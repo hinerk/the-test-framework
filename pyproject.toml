@@ -10,3 +10,7 @@ dependencies = [
 ]
 [project.urls]
 Repository = "https://github.com/hinerk/the-test-framework"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_functions = ["pytest_*"]
