@@ -1,10 +1,18 @@
 from dataclasses import dataclass, field
 import enum
+from types import TracebackType
 from typing import Any, TypeAlias
 from logging import LogRecord
 
 
 TestStepCallID: TypeAlias = str
+
+
+@dataclass
+class ExcInfo:
+    type: type[BaseException]
+    instance: BaseException
+    traceback: TracebackType
 
 
 class TestResult(enum.Enum):
@@ -60,7 +68,7 @@ class TestStepResultInfo[T]:
     returned: T
     log: list[LogRecord]
     embedded_results: list["TestStepResultInfo"]
-    exception: Exception | None = None
+    exception: BaseException | None = None
 
     def __bool__(self) -> bool:
         return self.result == TestResult.SUCCESS

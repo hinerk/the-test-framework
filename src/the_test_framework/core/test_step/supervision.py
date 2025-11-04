@@ -45,7 +45,7 @@ class TestStepSupervision:
             datetime.datetime.now().astimezone())
         self._log_capture.__exit__(exc_type, exc_val, exc_tb)
         self._traversed_context = True
-        self._metadata_ctrl.submit_exception_info(exc_val)
+        self._metadata_ctrl.submit_exception_info(exc_type, exc_val, exc_tb)
         self._metadata_ctrl.submit_log_messages(self._log_capture.records)
         self._attempt_to_complete()
         self._on_exit_callback()

@@ -7,7 +7,7 @@ from ..exceptions import FailedTest
 
 
 def infer_test_result(returned: Any | None = None,
-                      exc_info: Exception | None = None) -> TestResult:
+                      exc_info: BaseException | None = None) -> TestResult:
     """infers test result from return value or exception info"""
     if isinstance(returned, TestResult):
         return returned

@@ -5,12 +5,13 @@ import functools
 import uuid
 from dataclasses import dataclass
 from logging import LogRecord
+from types import TracebackType
 from typing import Callable, Any, Iterator, TYPE_CHECKING
 
 
 from .helpers import infer_test_result
-from ..dtypes import TestStepResultInfo, TestResult
-
+from ..dtypes import ExcInfo, TestStepResultInfo, TestResult
+from ..test_step_report import TestStepReport
 
 if TYPE_CHECKING:
     from .decorated_test_step import DecoratedTestStep
@@ -51,7 +52,8 @@ class TestStepMetadataControl:
     of its own kind is yet to be discussed ;-).
     """
     submit_return_value: Callable[[Any], None]
-    submit_exception_info: Callable[[Exception], None]
+    submit_exception_info: Callable[
+        [type[BaseException], BaseException, TracebackType], None]
     submit_log_messages:Callable[[list[LogRecord]], None]
     submit_test_start_time: Callable[[datetime.datetime], None]
     submit_test_end_time: Callable[[datetime.datetime], None]
@@ -103,7 +105,7 @@ class TestStepMetadata:
         self.test_step = function
         self._parent_step = parent
 
-        self._exc_info: Exception | None = None
+        self._exc_info: ExcInfo | None = None
         self._log_messages: list[LogRecord] | None = None
         self._return_value = None
         self._return_value_is_set = False
@@ -128,9 +130,12 @@ class TestStepMetadata:
         self._return_value = returned
         self._return_value_is_set = True
 
-    def _submit_exception_info(self, exc_info: Exception):
+    def _submit_exception_info(self,
+                               exc_type: type[BaseException],
+                               exc_val: BaseException,
+                               exc_tb: TracebackType):
         """only to be used by TestStepMetadataControl to submit exception info"""
-        self._exc_info = exc_info
+        self._exc_info = ExcInfo(exc_type, exc_val, exc_tb)
 
     def _submit_log_messages(self, messages: list[LogRecord]):
         """only to be used by TestStepMetadataControl to submit log messages"""
@@ -204,7 +209,7 @@ class TestStepMetadata:
         return self._return_value
 
     @property
-    def exc_info(self) -> Exception | None:
+    def exc_info(self) -> ExcInfo | None:
         """info about any exception which might occurred during TestStep execution
 
         :raises RuntimeError: if TestStep execution is not yet completed.
@@ -235,8 +240,9 @@ class TestStepMetadata:
         if not self.completed:
             raise RuntimeError(f"test step {self!r} "
                                f"has not completed yet!")
-        inferred_test_result = infer_test_result(self._return_value,
-                                                 self._exc_info)
+        inferred_test_result = infer_test_result(
+            returned=self._return_value,
+            exc_info=None if self._exc_info is None else self._exc_info.instance)
         embedded_results = {t.test_result for t in self._embedded_steps}
         return functools.reduce(
             lambda a, b: a.merge(b), [*embedded_results, inferred_test_result])
@@ -266,7 +272,7 @@ class TestStepMetadata:
             uuid=self._call_id.hex,
             log=self.log_messages,
             embedded_results=[e.as_test_step_result_info() for e in self.children],
-            exception=self.exc_info,
+            exception=None if self.exc_info is None else self.exc_info.instance,
         )
 
     def as_dict(self):
@@ -277,6 +283,6 @@ class TestStepMetadata:
             end_time=self.end_time,
             test_result=self.test_result,
             return_value=self.return_value,
-            exc_info=self.exc_info,
+            exc_info=None if self.exc_info is None else self.exc_info.instance,
             log_messages=self.log_messages,
         )
