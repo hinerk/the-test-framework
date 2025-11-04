@@ -1,6 +1,8 @@
 from logging import getLogger
 from typing import Generator
 
+from the_test_framework.core.exceptions import TestSystemIntrospectionError
+
 from .callbacks import (
     RegisteredCallback,
     SystemSetupCallback,
@@ -40,4 +42,4 @@ class CallbackRegistry:
                 msg = f"No {callback.description} callback registered!"
                 logger.warning(msg)
                 if callback.mandatory:
-                    raise RuntimeError(msg)
+                    raise TestSystemIntrospectionError(msg)
