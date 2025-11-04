@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import datetime
 from typing import Callable, Any, TYPE_CHECKING
-
 from log_capture import LogCapture
-
 
 from .metadata import TestStepMetadata, TestStepMetadataControl
 
@@ -79,11 +77,12 @@ class TestStepSupervisor:
                 TestStepMetadata], None] | None = None,
             on_test_step_exit_callback: Callable[[
                 TestStepMetadata], None] | None = None,
+            log_capture: LogCapture | None = None,
     ):
         self._on_test_step_enter_callback = on_test_step_enter_callback
         self._on_test_step_exit_callback = on_test_step_exit_callback
 
-        self._log_capture = LogCapture()
+        self._log_capture = LogCapture() if log_capture is None else log_capture
         self._test_step_stack: list[TestStepMetadata] = list()
         self._supervision_registry: dict[
             TestStepMetadata, TestStepSupervision] = dict()
@@ -125,7 +124,7 @@ class TestStepSupervisor:
                 self._on_test_step_exit_callback(metadata)
 
         test_step_supervision = TestStepSupervision(
-            log_capture=self._log_capture,
+            log_capture=self._log_capture.nested(),
             metadata=metadata,
             metadata_ctrl=metadata_ctrl,
             on_enter_callback=on_test_step_enter_callback,

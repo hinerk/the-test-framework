@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from log_capture import LogCapture
 
 from .sequence import TestSequenceSupervision
 from .test_step.supervision import TestStepSupervisor
@@ -15,7 +16,7 @@ import time
 from threading import Thread
 from multiprocessing import Value
 from multiprocessing.sharedctypes import Synchronized
-from typing import Callable, TypeVar, ParamSpec, Any, Optional
+from typing import Callable, TypeVar, ParamSpec, Any
 from logging import getLogger
 
 from .exceptions import (
@@ -50,7 +51,11 @@ class ClusterFuckException(Exception):
 class TestSystem:
     _active_test_steps: dict[str, Any] = {}
 
-    def __init__(self, running: Optional[Synchronized] = None):
+    def __init__(
+            self,
+            running: Synchronized | None = None,
+            log_capture: LogCapture | None = None,
+    ):
         running = running or Value("b", True)
         self._shared_memory = SharedMemory(running=running)
         self._callback_registry = CallbackRegistry()
@@ -59,6 +64,7 @@ class TestSystem:
         self._do_not_abort = False
         self.monitor = TestSystemMonitor()
         self._quit_requested = False
+        self._log_capture = LogCapture() if log_capture is None else log_capture
 
         self._test_step_supervisor = TestStepSupervisor()
 
@@ -412,7 +418,8 @@ class TestSystem:
                     (
                         sequence_supervision,
                         self._test_step_supervisor
-                    ) = TestSequenceSupervision.setup_supervision()
+                    ) = TestSequenceSupervision.setup_supervision(
+                        log_capture=self._log_capture.nested())
 
                     try:
                         with sequence_supervision:

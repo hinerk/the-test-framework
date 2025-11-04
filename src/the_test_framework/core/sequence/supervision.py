@@ -4,6 +4,8 @@ import functools
 
 from typing import Any, TYPE_CHECKING
 
+from log_capture import LogCapture
+
 from ..dtypes import TestResult, TestResultInfo
 from ..test_step.helpers import infer_test_result
 from ..test_step.metadata import TestStepMetadata
@@ -17,16 +19,22 @@ if TYPE_CHECKING:
 class TestSequenceSupervision:
     """Context Manager which supervises Test Sequence execution"""
     @classmethod
-    def setup_supervision(cls) -> tuple[TestSequenceSupervision, TestStepSupervisor]:
+    def setup_supervision(
+            cls,
+            log_capture: LogCapture | None = None
+    ) -> tuple[TestSequenceSupervision, TestStepSupervisor]:
+        """creates entangled TestStepSupervision and TestStepSupervisor"""
         sequence_supervision = cls()
 
         def submit_test_step_meta_data(metadata: TestStepMetadata):
+            """submit new TestStepMetadata to SequenceSupervision"""
             if metadata.parent is not None:
                 return
             sequence_supervision._sequence.append(metadata)
 
         step_supervisor = TestStepSupervisor(
-            on_test_step_enter_callback=submit_test_step_meta_data
+            on_test_step_enter_callback=submit_test_step_meta_data,
+            log_capture=log_capture,
         )
         return sequence_supervision, step_supervisor
 
@@ -54,7 +62,8 @@ class TestSequenceSupervision:
         self._submitted_return_value = True
 
     @property
-    def result(self) -> TestResult:
+    def test_result(self) -> TestResult:
+        """get the overall result of the Test Sequence"""
         if not self._traversed_context:
             raise RuntimeError("Test Sequence not yet finished!")
         if not self._submitted_return_value:
