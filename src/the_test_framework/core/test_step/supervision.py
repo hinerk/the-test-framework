@@ -36,11 +36,13 @@ class TestStepSupervision:
     def __enter__(self):
         self._log_capture.__enter__()
         self._on_enter_callback()
-        self._metadata_ctrl.submit_test_start_time(datetime.datetime.now())
+        self._metadata_ctrl.submit_test_start_time(
+            datetime.datetime.now().astimezone())
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._metadata_ctrl.submit_test_end_time(datetime.datetime.now())
+        self._metadata_ctrl.submit_test_end_time(
+            datetime.datetime.now().astimezone())
         self._log_capture.__exit__(exc_type, exc_val, exc_tb)
         self._traversed_context = True
         self._metadata_ctrl.submit_exception_info(exc_val)
