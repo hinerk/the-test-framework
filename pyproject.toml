@@ -1,5 +1,10 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools", "wheel", "setuptools-git-versioning"]  # PEP 518 specifications.
+
 [project]
 name = "the-test-framework"
+dynamic = ["version"]
 description = "a production line test system framework"
 readme = "README.md"
 authors = [
@@ -14,3 +19,13 @@ Repository = "https://github.com/hinerk/the-test-framework"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_functions = ["pytest_*"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools-git-versioning]
+enabled = true
