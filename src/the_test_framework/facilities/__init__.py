@@ -3,6 +3,7 @@ from .others import (
     origin_of_func,
     preview,
     HasRepr,
+    enforce_presence_of_class_attributes,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "preview",
     "origin_of_func",
     "log_record_to_dict",
+    "enforce_presence_of_class_attributes",
 ]
