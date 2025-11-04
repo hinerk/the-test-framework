@@ -18,7 +18,11 @@ from multiprocessing.sharedctypes import Synchronized
 from typing import Callable, TypeVar, ParamSpec, Any, Optional
 from logging import getLogger
 
-from .exceptions import QuitTestSystem, AbortTestSequence
+from .exceptions import (
+    NoTestSystemInstanceFound,
+    QuitTestSystem,
+    AbortTestSequence,
+)
 from .monitor import TestSystemMonitor, MonitorError
 from .error_handler import error_handler
 from the_test_framework.core.callback_registry import CallbackRegistry
@@ -98,8 +102,9 @@ class TestSystem:
                     if isinstance(candidate, cls):
                         return candidate
             f = f.f_back
-        raise RuntimeError(f"Couldn't identify {cls.__name__} instance, which"
-                           f"issued the call to _find_calling_instance_()!")
+        raise NoTestSystemInstanceFound(
+            f"Couldn't identify {cls.__name__} instance, which"
+            f"issued the call to _find_calling_instance_()!")
 
     def repeat_test_step(self, step: DecoratedTestStep) -> bool:
         """framework internal method - whether the test shall be repeated"""
