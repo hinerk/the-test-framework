@@ -8,6 +8,7 @@ TestStepCallID: TypeAlias = str
 
 
 class TestResult(enum.Enum):
+    """The Test Result of both Test Step and Test Sequence"""
     SUCCESS = enum.auto()
     FAILED = enum.auto()
     EXCEPTION = enum.auto()
@@ -40,14 +41,20 @@ TestResultMergingPrecedence = [
 
 @dataclass
 class CustomTestResult[T]:
+    """A custom Test Result which allows to return a recognized TestResult
+    along with data from a Test Step.
+
+    If a Test Step is returning an instance of CustomTestResult, TestResult
+    inference is bypassed and CustomTestResult.result is considered instead.
+    """
     result: TestResult
     returned: T
 
 
 @dataclass
 class TestStepResultInfo[T]:
+    """Captures the Result for a Test Step"""
     name: str
-    ancestry: tuple[str, ...]
     result: TestResult
     uuid: TestStepCallID
     returned: T
@@ -61,6 +68,7 @@ class TestStepResultInfo[T]:
 
 @dataclass
 class TestResultInfo:
+    """Captures the Result for a Test Sequence"""
     steps: list[TestStepResultInfo[Any]]
 
     def __bool__(self) -> bool:

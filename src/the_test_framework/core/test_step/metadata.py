@@ -261,7 +261,6 @@ class TestStepMetadata:
         """
         return TestStepResultInfo(
             name=self.name,
-            ancestry=self.test_step.ancestry,
             result=self.test_result,
             returned=self.return_value,
             uuid=self._call_id.hex,

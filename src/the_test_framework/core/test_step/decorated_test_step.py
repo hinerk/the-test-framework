@@ -10,8 +10,10 @@ from typing import (
     Literal
 )
 
-from ..dtypes import CustomTestResult
-from ..exceptions import AbortTestSequence
+from ..exceptions import (
+    AbortTestSequence,
+    NoTestSystemInstanceFound,
+)
 from ..test_system import TestSystem
 
 
@@ -24,38 +26,35 @@ R_E = TypeVar("R_E")
 logger = getLogger(__name__)
 
 
-def infer_return_value(returned: Any):
-    if isinstance(returned, CustomTestResult):
-        return returned.returned
-    return returned
-
-
 class _DataTypeWhichWontBeReturnedByAnyTestStep: ...
 
 
 class DecoratedTestStep(Generic[P, R]):
     name: str
-    ancestry: tuple[str, ...]
-    root: bool
 
-    def __init__(self, f: Callable[P, R], abort_on_error: bool, name: str, *ancestors: str):
+    def __init__(
+            self,
+            f: Callable[P, R],
+            abort_on_error: bool,
+            name: str,
+    ):
         self._f = f
         self.name = name
-        self.ancestry = ancestors
         self.abort_on_error = abort_on_error
 
     def __repr__(self):
         return f"<TestStep {self.name!r}>"
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+    def _call_as_part_of_a_test_system(self,
+                                       test_system: TestSystem,
+                                       *args: P.args, **kwargs: P.kwargs) -> R:
         returned = _DataTypeWhichWontBeReturnedByAnyTestStep()
-        test_system = TestSystem.get_active_instance()
         while True:
             supervision = test_system.test_step_supervisor.supervise_test_step(self)
             try:
                 logger.info(f"executing {self}")
                 with supervision:
-                    returned = infer_return_value(self._f(*args, **kwargs))
+                    returned = self._f(*args, **kwargs)
                 supervision.submit_return_value(returned)
                 logger.debug(f"{self} completed")
             except Exception as e:
@@ -78,22 +77,15 @@ class DecoratedTestStep(Generic[P, R]):
                                      "job as he's claiming to be!")
             return returned
 
-    @overload
-    def sub_step(
-            self, name: str, abort_on_error: Literal[False] = ...
-    ) -> "Callable[[Callable[P_E, None]], DecoratedTestStep[P_E, None]]": ...
-
-    @overload
-    def sub_step(
-            self, name: str, abort_on_error: Literal[True] = ...
-    ) -> "Callable[[Callable[P_E, R_E]], DecoratedTestStep[P_E, R_E]]": ...
-
-    def sub_step(
-            self, name: str, abort_on_error: bool = True
-    ) -> Callable[[Callable[P_E, R_E]], "DecoratedTestStep[P_E, R_E]"]:
-        def decorator(f: Callable[P_E, R_E]) -> DecoratedTestStep[P_E, R_E]:
-            return DecoratedTestStep(f, abort_on_error, name, *(*self.ancestry, self.name))
-        return decorator
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            test_system = TestSystem.get_active_instance()
+        except NoTestSystemInstanceFound:
+            logger.info(f"No instance of TestSystem found! Calling "
+                        f"{self.name} outside of TestSystem scope!")
+            return self._f(*args, **kwargs)
+        else:
+            return self._call_as_part_of_a_test_system(test_system, *args, **kwargs)
 
 
 def is_decorated_test_step(obj: Any) -> TypeGuard[DecoratedTestStep[Any, Any]]:
