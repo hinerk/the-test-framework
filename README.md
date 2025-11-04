@@ -249,7 +249,13 @@ The **uut-setup**s exit stack is unwinded immediately after the
 
 ## Test Steps
 
+### Test Result Determination
 
+1. A test step which aborts due to an exception is considered a failed test.  
+   (one can voluntarily fail a test by raising `FailedTest` exception).
+2. An instance of `TestResult` returned by a test step is taken for face value.
+3. An instance of `CustomTestResult` returned by a test step is taken for face value.
+4. **A test step returning `False` is nevertheless considered a successful test.**
 
 
 ## Missing Features
