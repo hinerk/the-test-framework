@@ -88,12 +88,12 @@ class TestSystemMonitor:
                     name = task.name
                     pid = task.pid
                     if task.is_alive():
-                        logger.debug(f"Process {name} (PID: {pid}) seem to be alive!")
+                        logger.log(0, f"Process {name} (PID: {pid}) seem to be alive!")
                     else:
                         exit_code = task.exitcode
                         self.set_error(threading.current_thread().name, f"{name} (PID: {pid}) seem to be dead! (exit code: {exit_code})")
                 else:
                     if task.is_alive():
-                        logger.debug(f"Task {task.name!r} seem to be alive!")
+                        logger.log(0, f"Task {task.name!r} seem to be alive!")
                     else:
                         self.set_error(threading.current_thread().name, f"{task.name} seem to be dead!")
