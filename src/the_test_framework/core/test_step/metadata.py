@@ -286,3 +286,16 @@ class TestStepMetadata:
             exc_info=None if self.exc_info is None else self.exc_info.instance,
             log_messages=self.log_messages,
         )
+
+    def as_test_step_report(self) -> TestStepReport:
+        return TestStepReport(
+            name=self.name,
+            test_result=self.test_result,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            log_messages=self.log_messages,
+            children=[c.as_test_step_report() for c in self.children],
+            parent=None if self.parent is None else self.parent.as_test_step_report(),
+            return_value=self.return_value,
+            exc_info=self.exc_info,
+        )
