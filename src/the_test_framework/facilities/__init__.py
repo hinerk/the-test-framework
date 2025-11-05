@@ -5,6 +5,8 @@ from .others import (
     HasRepr,
     enforce_presence_of_class_attributes,
 )
+from .tetchy_tftp import TetchyTFTPServer
+
 
 __all__ = [
     "HasRepr",
@@ -12,4 +14,5 @@ __all__ = [
     "origin_of_func",
     "log_record_to_dict",
     "enforce_presence_of_class_attributes",
+    "TetchyTFTPServer",
 ]
